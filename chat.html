@@ -17,6 +17,8 @@
                 --good: #4caf50;
                 --warn: #ff9800;
                 --bad: #f44336;
+                --twitch: #9147ff;
+                --youtube: #ff0000;
             }
 
             * {
@@ -47,6 +49,7 @@
                 align-items: center;
                 font-weight: 600;
                 font-size: 14px;
+                flex-shrink: 0;
             }
 
             #status {
@@ -65,19 +68,56 @@
                 background: var(--bad);
             }
 
-            #chat {
+            #columns {
                 flex: 1;
-                overflow-y: auto;
-                padding: 16px;
+                display: flex;
+                overflow: hidden;
+            }
+
+            .column {
+                flex: 1;
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
+                overflow: hidden;
+            }
+
+            .column:first-child {
+                border-right: 2px solid var(--border);
+            }
+
+            .column-header {
+                padding: 10px 16px;
+                background: var(--panel);
+                border-bottom: 1px solid var(--border);
+                font-weight: 700;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+
+            .column-header.twitch {
+                color: var(--twitch);
+            }
+
+            .column-header.youtube {
+                color: var(--youtube);
+            }
+
+            .chat {
+                flex: 1;
+                overflow-y: auto;
+                padding: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
             }
 
             .message {
                 background: var(--panel);
-                padding: 10px 14px;
-                border-radius: 14px;
+                padding: 8px 12px;
+                border-radius: 12px;
                 border: 1px solid var(--border);
                 animation: fadeIn 0.15s ease-out;
             }
@@ -86,6 +126,7 @@
                 display: flex;
                 align-items: center;
                 gap: 6px;
+                flex-wrap: wrap;
             }
 
             .user {
@@ -99,7 +140,6 @@
             }
 
             .text {
-                margin-top: 4px;
                 word-wrap: break-word;
                 white-space: pre-wrap;
             }
@@ -135,10 +175,44 @@
             <div id="status" class="status-connecting">Connecting…</div>
         </header>
 
-        <div id="chat"></div>
+        <div id="columns">
+            <div class="column">
+                <div class="column-header twitch">
+                    <svg
+                        class="platform-icon"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            fill="#9147ff"
+                            d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"
+                        />
+                    </svg>
+                    Twitch
+                </div>
+                <div class="chat" id="chat-twitch"></div>
+            </div>
+            <div class="column">
+                <div class="column-header youtube">
+                    <svg
+                        class="platform-icon"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            fill="#ff0000"
+                            d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"
+                        />
+                    </svg>
+                    YouTube
+                </div>
+                <div class="chat" id="chat-youtube"></div>
+            </div>
+        </div>
 
         <script>
-            const chatContainer = document.getElementById("chat");
+            const twitchContainer = document.getElementById("chat-twitch");
+            const youtubeContainer = document.getElementById("chat-youtube");
             const statusIndicator = document.getElementById("status");
 
             function setStatus(state, text) {
@@ -146,8 +220,8 @@
                 statusIndicator.textContent = text;
             }
 
-            function scrollToBottom() {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+            function scrollToBottom(container) {
+                container.scrollTop = container.scrollHeight;
             }
 
             function getTime() {
@@ -157,33 +231,18 @@
                 });
             }
 
-            function platformIcon(source) {
-                const svg =
-                    source === "Twitch"
-                        ? `<svg class="platform-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#9147ff" d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>`
-                        : `<svg class="platform-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#ff0000" d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>`;
-                const span = document.createElement("span");
-                span.innerHTML = svg;
-                span.title = source;
-                return span.firstElementChild;
-            }
-
             function renderMessage(
+                container,
                 username,
                 color,
                 messageText,
                 badges,
-                source,
             ) {
                 const msg = document.createElement("div");
                 msg.className = "message";
 
-                // Meta row
                 const meta = document.createElement("div");
                 meta.className = "meta";
-
-                // Platform icon
-                meta.appendChild(platformIcon(source));
 
                 // Badges
                 (badges || []).forEach((b) => {
@@ -203,21 +262,21 @@
                 userSpan.textContent = username;
                 meta.appendChild(userSpan);
 
+                // Message text inline
+                const textSpan = document.createElement("span");
+                textSpan.className = "text";
+                textSpan.textContent = " " + messageText;
+                meta.appendChild(textSpan);
+
                 // Timestamp
                 const timeSpan = document.createElement("span");
                 timeSpan.className = "time";
                 timeSpan.textContent = getTime();
                 meta.appendChild(timeSpan);
 
-                // Message text — textContent prevents XSS
-                const textDiv = document.createElement("div");
-                textDiv.className = "text";
-                textDiv.textContent = messageText;
-
                 msg.appendChild(meta);
-                msg.appendChild(textDiv);
-                chatContainer.appendChild(msg);
-                scrollToBottom();
+                container.appendChild(msg);
+                scrollToBottom(container);
             }
 
             // ── Streamer.bot WebSocket Client ────────────────────────────────────────────
@@ -234,8 +293,6 @@
             });
 
             // ── Chat message handlers ────────────────────────────────────────────────────
-            // The @streamerbot/client library exposes typed events as "Source.EventType".
-            // Each handler receives { event, data } — NOT a raw wrapper object.
 
             function handleChatMessage(e) {
                 const { data, event } = e;
@@ -243,18 +300,21 @@
 
                 const username =
                     data.user?.name || data.user?.login || "Unknown";
-
                 const displayName = data.user?.displayName || username;
-
                 const color = data.user?.color || "var(--accent)";
-
-                // payload puts the message text at data.text
                 const messageText = data.text || "";
-
                 const badges = data.user?.badges || [];
                 const source = event?.source || "Twitch";
 
-                renderMessage(displayName, color, messageText, badges, source);
+                const container =
+                    source === "YouTube" ? youtubeContainer : twitchContainer;
+                renderMessage(
+                    container,
+                    displayName,
+                    color,
+                    messageText,
+                    badges,
+                );
             }
 
             client.on("Twitch.ChatMessage", handleChatMessage);
