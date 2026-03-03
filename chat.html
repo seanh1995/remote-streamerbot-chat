@@ -528,25 +528,25 @@
                     // You are free to remove durationMonths if it's actually shows 3+ months subs
                     case "Sub":
                         name = data.user.name;
-                        type = data.is_prime ? "PrimeSub" : `Tier ${data.sub_tier} ${type} for ${data.durationMonths} months`;
+                        type = data.is_prime ? "PrimeSub" : `Tier ${data.sub_tier.substring(0,1)} ${type} for ${data.durationMonths} months`;
                         break;
                     
                     case "ReSub":
                         name = data.user.name;
-                        type = data.is_prime ? "PrimeReSub" : `Tier ${data.subTier} ${type} for ${data.durationMonths} months`;
+                        type = data.is_prime ? "PrimeReSub" : `Tier ${data.subTier.substring(0,1)} ${type} for ${data.durationMonths} months`;
                         value = `/ Total: ${data.cumulativeMonths} months`; 
                         break;
 
                     case "GiftBomb":
                         name = data.user.name;
                         type = data.total > 1 ? type : "RandomSub";
-                        value = data.total > 1 ? `${data.total}x Tier ${data.sub_tier}` : `${data.recipients[0]} Tier ${data.sub_tier}`
+                        value = data.total > 1 ? `${data.total}x Tier ${data.sub_tier.substring(0,1)}` : `${data.recipients[0]} Tier ${data.sub_tier.substring(0,1)}`
                         break;
 
                     case "GiftSub":
                         if (!data.randomCommunitySubGift){
                         name = data.user.name;
-                        value = `${data.durationMonths} months of Tier ${data.subTier} to ${data.recepient.name}`
+                        value = `${data.durationMonths} months of Tier ${data.subTier.substring(0,1)} to ${data.recepient.name}`
                        }
                        break;
                     
