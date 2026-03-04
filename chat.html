@@ -213,6 +213,14 @@
                 white-space: pre-wrap;
             }
 
+            .reply {
+                font-size: 11px;
+                color: var(--muted);
+                border-left: 2px solid var(--border);
+                padding-left: 6px;
+                word-break: break-word;
+            }
+
             .badge {
                 height: 16px;
                 vertical-align: middle;
@@ -396,10 +404,14 @@
                 badges,
                 emotes,
                 mention, 
-                messageId
+                messageId,
+                reply
             ) {
                 const msg = document.createElement("div");
                 msg.className = mention ? "message mention" : "message";
+
+                const reply = document.createElement("div");
+                reply.className = "reply";
 
                 const meta = document.createElement("div");
                 meta.className = "meta";
@@ -423,6 +435,13 @@
                 msg.name = username;
                 msg.id = messageId;
                 meta.appendChild(userSpan);
+
+                // Reply handler
+                if (reply && container === twitchContainer) {
+                    const replySpan = document.createElement("span");
+                    replySpan.textContent = `Replying to ${reply.userName}'s message: "${reply.msgBody}"`;
+                    msg.appendChild(replySpan);
+                }
 
                 // Message text inline
                 const textSpan = document.createElement("span");
