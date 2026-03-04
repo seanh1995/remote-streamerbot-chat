@@ -439,8 +439,6 @@
                 timeSpan.textContent = getTime();
                 meta.appendChild(timeSpan);
 
-
-
                 msg.appendChild(meta);
                 container.prepend(msg);
             }
@@ -495,7 +493,7 @@
 
                 const source = event?.source || "Twitch";
 
-                let displayName, color, messageText, badge, mention, messageId;
+                let displayName, color, messageText, badges, mention, messageId;
 
                 if (source === "YouTube") {
                     displayName = data.user?.name || "Unknown";
