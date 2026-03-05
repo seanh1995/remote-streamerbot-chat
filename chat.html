@@ -436,6 +436,7 @@
                 // Reply handler
                 if (reply && container === twitchContainer) {
                     const replySpan = document.createElement("span");
+                    replySpan.className = "reply";
                     replySpan.textContent = `Replying to ${reply.userName}'s message: "${reply.msgBody}"`;
                     msg.appendChild(replySpan);
                 }
@@ -529,7 +530,7 @@
                         "var(--twitch)";
                     messageText = data.message?.message || data.text || "";
                     badges = data.message?.badges || data.user?.badges || [];
-                    mention = messageText.toLowerCase().includes("christitustech") != -1;
+                    mention = messageText.toLowerCase().includes("christitustech");
                     messageId = data.messageId;
                     reply = data.reply;
                 }
