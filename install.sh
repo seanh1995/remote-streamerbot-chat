@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHAT_HTML="$SCRIPT_DIR/chat.html"
 DESKTOP_DIR="$HOME/.local/share/applications"
 DESKTOP_FILE="$DESKTOP_DIR/streamerbot-chat.desktop"
+LOCAL_BIN_DIR="$HOME/.local/bin"
+LAUNCHER_SCRIPT="$LOCAL_BIN_DIR/streamerbot-chat-launcher"
 
 desktop_entry_path() {
     local desktop_id="$1"
@@ -86,6 +88,7 @@ fi
 
 # Ensure desktop applications directory exists
 mkdir -p "$DESKTOP_DIR"
+mkdir -p "$LOCAL_BIN_DIR"
 
 CURRENT_DEFAULT_BROWSER="$(xdg-settings get default-web-browser 2>/dev/null || true)"
 HTML_HANDLER="$(xdg-mime query default text/html 2>/dev/null || true)"
@@ -119,13 +122,87 @@ fi
 
 echo "✓ Browser associations set to $TARGET_BROWSER"
 
+# Write the launcher script
+cat > "$LAUNCHER_SCRIPT" << EOF
+#!/usr/bin/env bash
+
+set -e
+
+CHAT_HTML="$CHAT_HTML"
+TARGET_BROWSER="$TARGET_BROWSER"
+CHAT_URL="file://$CHAT_HTML"
+
+find_browser_command() {
+    local candidate
+
+    for candidate in "\$@"; do
+        if command -v "\$candidate" &>/dev/null; then
+            printf '%s\n' "\$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+case "$TARGET_BROWSER" in
+    *.firefox.desktop|librewolf.desktop)
+        BROWSER_CMD="\$(find_browser_command firefox librewolf firefox-bin)" || true
+        if [[ -n "\$BROWSER_CMD" ]]; then
+            exec "\$BROWSER_CMD" --new-window "\$CHAT_URL"
+        fi
+        ;;
+    com.google.Chrome.desktop|google-chrome.desktop|google-chrome-stable.desktop)
+        BROWSER_CMD="\$(find_browser_command google-chrome-stable google-chrome chrome)" || true
+        if [[ -n "\$BROWSER_CMD" ]]; then
+            exec "\$BROWSER_CMD" --new-window "\$CHAT_URL"
+        fi
+        ;;
+    chromium.desktop|chromium-browser.desktop)
+        BROWSER_CMD="\$(find_browser_command chromium chromium-browser)" || true
+        if [[ -n "\$BROWSER_CMD" ]]; then
+            exec "\$BROWSER_CMD" --new-window "\$CHAT_URL"
+        fi
+        ;;
+    brave-browser.desktop|brave-browser-stable.desktop)
+        BROWSER_CMD="\$(find_browser_command brave-browser brave-browser-stable)" || true
+        if [[ -n "\$BROWSER_CMD" ]]; then
+            exec "\$BROWSER_CMD" --new-window "\$CHAT_URL"
+        fi
+        ;;
+    vivaldi-stable.desktop)
+        BROWSER_CMD="\$(find_browser_command vivaldi-stable vivaldi)" || true
+        if [[ -n "\$BROWSER_CMD" ]]; then
+            exec "\$BROWSER_CMD" --new-window "\$CHAT_URL"
+        fi
+        ;;
+    org.gnome.Epiphany.desktop|epiphany.desktop)
+        BROWSER_CMD="\$(find_browser_command epiphany epiphany-browser)" || true
+        if [[ -n "\$BROWSER_CMD" ]]; then
+            exec "\$BROWSER_CMD" --new-window "\$CHAT_URL"
+        fi
+        ;;
+    org.kde.falkon.desktop)
+        BROWSER_CMD="\$(find_browser_command falkon)" || true
+        if [[ -n "\$BROWSER_CMD" ]]; then
+            exec "\$BROWSER_CMD" --new-window "\$CHAT_URL"
+        fi
+        ;;
+esac
+
+exec xdg-open "$CHAT_HTML"
+EOF
+
+chmod +x "$LAUNCHER_SCRIPT"
+echo "✓ Installed launcher script to $LAUNCHER_SCRIPT"
+
 # Write the .desktop file
 cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
 Name=StreamerBot Chat
 Comment=Live chat overlay via Streamer.bot
-TryExec=xdg-open
-Exec=xdg-open "$CHAT_HTML"
+TryExec=$LAUNCHER_SCRIPT
+Exec=$LAUNCHER_SCRIPT
 Icon=web-browser
 Terminal=false
 Type=Application
@@ -142,4 +219,4 @@ fi
 
 echo ""
 echo "Done! You can now launch 'StreamerBot Chat' from your application launcher."
-echo "Or run it directly: xdg-open $CHAT_HTML"
+echo "Or run it directly: $LAUNCHER_SCRIPT"
