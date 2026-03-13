@@ -4,6 +4,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHAT_SCRIPT="$SCRIPT_DIR/chat"
+CHAT_HTML="$SCRIPT_DIR/chat.html"
 DESKTOP_DIR="$HOME/.local/share/applications"
 DESKTOP_FILE="$DESKTOP_DIR/streamerbot-chat.desktop"
 
@@ -13,6 +14,12 @@ echo "=============================="
 # Ensure the chat script exists
 if [[ ! -f "$CHAT_SCRIPT" ]]; then
     echo "Error: chat script not found at $CHAT_SCRIPT"
+    exit 1
+fi
+
+# Ensure the chat HTML exists
+if [[ ! -f "$CHAT_HTML" ]]; then
+    echo "Error: chat HTML not found at $CHAT_HTML"
     exit 1
 fi
 
@@ -28,8 +35,8 @@ cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
 Name=StreamerBot Chat
 Comment=Live chat overlay via Streamer.bot
-Exec=$CHAT_SCRIPT
-Icon=helium-browser
+Exec=xdg-open file://$CHAT_HTML
+Icon=web-browser
 Terminal=false
 Type=Application
 Categories=Network;
