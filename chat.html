@@ -395,6 +395,26 @@
         });
       }
 
+      function normalizeBadges(badges) {
+        if (Array.isArray(badges)) {
+          return badges;
+        }
+
+        if (badges && typeof badges === "object") {
+          return [badges];
+        }
+
+        return [];
+      }
+
+      function getYouTubeBadgeText(badge) {
+        let badgeText = "";
+        badgeText += badge?.mod ? "🗡 " : "";
+        badgeText += badge?.sponsor ? "💚 " : "";
+        badgeText += badge?.verified ? "✔ " : "";
+        return badgeText.trim();
+      }
+
       async function renderMessage(
         container,
         username,
@@ -413,7 +433,7 @@
         meta.className = "meta";
 
         // Badges
-        (badges || []).forEach((b) => {
+        normalizeBadges(badges).forEach((b) => {
           if (container === twitchContainer) {
             if (!b.imageUrl) return;
             const img = document.createElement("img");
@@ -423,10 +443,8 @@
             img.onerror = () => img.remove();
             meta.appendChild(img);
           } else {
-            let badges;
-            badges += b.mod ? "🗡 " : "";
-            badges += b.sponsor ? "$ " : "";
-            badges += b.verified ? "✔ " : "";
+            const emoji = getYouTubeBadgeText(b);
+            if (!emoji) return;
             const badgeSpan = document.createElement("span");
             badgeSpan.className = "badge";
             badgeSpan.textContent = emoji;
@@ -440,7 +458,9 @@
         userSpan.style.color = color || "var(--accent)";
         userSpan.textContent = username;
         msg.dataset.name = username;
-        msg.id = messageId;
+        if (messageId) {
+          msg.id = messageId;
+        }
         meta.appendChild(userSpan);
 
         // Reply handler
@@ -497,7 +517,10 @@
       function purgeOnBan(e) {
         const { data, event } = e;
         if (!data) return;
-        const username = data.targetUser.name;
+        const username = data.targetUser?.name || data.user?.name;
+        if (!username) return;
+
+        const source = event?.source || "Twitch";
         const container =
           source === "YouTube" ? youtubeContainer : twitchContainer;
         let messages = container.querySelectorAll(
@@ -520,13 +543,36 @@
       // Make sure Streamer.bot's WebSocket Server is bound to 10.0.0.195 (not 127.0.0.1)
       // under Servers/Clients → WebSocket Server, otherwise remote connections are refused.
 
+      const connectionParams = new URLSearchParams(window.location.search);
+      const streamerbotHost =
+        connectionParams.get("host") ||
+        localStorage.getItem("streamerbot.host") ||
+        "10.0.0.195";
+      const configuredPort = Number(
+        connectionParams.get("port") ||
+          localStorage.getItem("streamerbot.port") ||
+          8080,
+      );
+      const streamerbotPort = Number.isFinite(configuredPort)
+        ? configuredPort
+        : 8080;
+
+      localStorage.setItem("streamerbot.host", streamerbotHost);
+      localStorage.setItem("streamerbot.port", String(streamerbotPort));
+
       const client = new StreamerbotClient({
-        host: "10.0.0.195",
-        port: 8080,
+        host: streamerbotHost,
+        port: streamerbotPort,
         password: "", // fill in if you set a password in Streamer.bot
+        immediate: false,
         autoReconnect: true,
         onConnect: () => setStatus("connected", "Connected"),
         onDisconnect: () => setStatus("disconnected", "Disconnected"),
+        onError: () => setStatus("disconnected", "Connection failed"),
+      });
+
+      client.connect(30000).catch(() => {
+        setStatus("disconnected", "Connection failed");
       });
 
       // ── Chat message handlers ────────────────────────────────────────────────────
@@ -560,11 +606,14 @@
           color = colorFromName(displayName);
           messageText = data.message || "";
           emotes = data.emotes || [];
-          badges = {
-            mod: data.user?.isModerator,
-            sponsor: data.user.isSponsor,
-            verified: data.user.isVerified,
-          };
+          badges = [
+            {
+              mod: data.user?.isModerator,
+              sponsor: data.user?.isSponsor,
+              verified: data.user?.isVerified,
+            },
+          ];
+          messageId = data.messageId || data.id;
         } else {
           emotes = data.emotes;
           // Twitch: text lives at data.message.message, user info at data.message / data.user
@@ -595,7 +644,8 @@
 
       client.on("Twitch.ChatMessage", handleChatMessage);
       client.on("YouTube.Message", handleChatMessage);
-      client.on("*.UserBanned", purgeOnBan);
+      client.on("Twitch.UserBanned", purgeOnBan);
+      client.on("YouTube.UserBanned", purgeOnBan);
       client.on("Twitch.UserTimedOut", purgeOnBan); // Even with fact that YT has timeouts, there no event for that in docs
       client.on("Twitch.ChatMessageDeleted", removeMessage); // YT WIP, no data about messages, so DIY
 
